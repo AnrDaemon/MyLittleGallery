@@ -1,0 +1,24 @@
+{
+    "name": "anrdaemon/mylittlegallery",
+    "description": "My Little Gallery, a PHP class and templates to create a quick drop-in HTML gallery.",
+    "license": "WTFPL",
+    "authors": [
+        {
+            "name": "Andrey Repin",
+            "email": "anrdaemon@yandex.ru"
+        }
+    ],
+    "require": {
+        "php": "^5.3 || ^7.0"
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "1.0.x-dev"
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "AnrDaemon\\MyLittleGallery": ""
+        }
+    }
+}
