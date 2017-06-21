@@ -1,0 +1,30 @@
+------------------------------------------------------------------------
+r668 | anrdaemon | 2017-06-22 00:12:01 +0300 (Чт, 22 июн 2017) | 2 lines
+
++ Force use of UTF-8 for file IO under PHP 7.1.
+
+------------------------------------------------------------------------
+r667 | anrdaemon | 2017-06-21 23:19:20 +0300 (Ср, 21 июн 2017) | 21 lines
+
+Gallery:
+* Use constants to store default property values.
+* Normalize file handling, encapsulate charset conversions inside a class.
+* Use PCRE_UTF8 for regexps.
+* Use getimagesize() to retrieve image metadata.
++ Allow custom mask listing.
++ Allow clearing SendFile support.
+* Allow serving gallery from the root (empty sfPrefix).
+* (Windows) fix failing realpath() once again.
++ Allow setting index template globally.
+* Imagick paths use UTF-8 by default.
++ Caseless extension comparison.
++ Typehint arrays where possible.
+
+Index:
+- Use default extensions set for directory listing.
+- Check for images present in gallery, not files on disk.
+  Gallery already skips unreadable/unsupported files.
+
++ Bump base library version.
+
+------------------------------------------------------------------------

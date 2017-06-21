@@ -54,7 +54,7 @@ if(defined('GALLERY_DESC_FILE'))
 else
 {
   $gallery = AnrDaemon\MyLittleGallery\Gallery::fromDirectory(new SplFileInfo(GALLERY_BASE_DIR),
-    array('gif', 'jpeg', 'jpg', 'png'), GALLERY_FS_ENCODING);
+    null, GALLERY_FS_ENCODING);
 }
 
 if(defined('GALLERY_SENDFILE_HEADER'))
@@ -68,38 +68,34 @@ switch(true)
 {
   case isset($_REQUEST['preview']):
     $name = basename($_REQUEST['preview']);
-    if(!is_file($gallery->getPath() . "/$name"))
+    if(!isset($gallery[$name]))
       throw new Exception('No referenced image found.', 404);
 
     if(!$gallery->thumbnailImage($name))
-      throw new Exception('No thumbnail image for \'' . htmlspecialchars($name) . '\'', 404);
+      throw new Exception("No thumbnail image for '$name'.", 404);
 
     if(isset($_REQUEST['console']))
     {
       die("Done.\n");
     }
 
-    if($gallery->sendFile("/.preview/" . rawurlencode($name)))
+    if($gallery->sendFile("/.preview/$name"))
       break;
 
-    $img = new Imagick($gallery->getPath() . "/.preview/$name");
-    header('Content-type: image/' . strtolower($img->getImageFormat()));
-    unset($img);
-    readfile($gallery->getPath() . "/.preview/$name");
+    header('Content-type: ' . $gallery[$name]['mime']);
+    readfile($gallery->getPath("/.preview/$name", true));
 
     break;
   case isset($_REQUEST['view']):
     $name = basename($_REQUEST['view']);
-    if(!is_file($gallery->getPath() . "/$name"))
+    if(!isset($gallery[$name]))
       throw new Exception("Image '$name' not found.", 404);
 
-    if($gallery->sendFile("/" . rawurlencode($name)))
+    if($gallery->sendFile("/$name"))
       break;
 
-    $img = new Imagick($gallery->getPath() . "/$name");
-    header('Content-type: image/' . strtolower($img->getImageFormat()));
-    unset($img);
-    readfile($gallery->getPath() . "/$name");
+    header('Content-type: ' . $gallery[$name]['mime']);
+    readfile($gallery->getPath("/$name", true));
 
     break;
   case isset($_REQUEST['show']):

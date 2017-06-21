@@ -3,7 +3,7 @@
 *
 * A simple drop-in file-based HTML gallery.
 *
-* $Id: Gallery.php 662 2017-06-17 12:16:41Z anrdaemon $
+* $Id: Gallery.php 668 2017-06-21 21:12:01Z anrdaemon $
 */
 
 namespace AnrDaemon\MyLittleGallery;
@@ -20,6 +20,11 @@ use
 class Gallery
 implements ArrayAccess, Countable, Iterator
 {
+  const previewTemplate =
+    '<div><a href="%1$s" target="_blank"><img src="%2$s" alt="%3$s"/></a><p><a href="%1$s" target="_blank">%3$s</a></p></div>';
+
+  const defaultTypes = 'gif|jpeg|jpg|png|tif|tiff|wbmp|webp';
+
   // All paths are UTF-8! (Except those from SplFileInfo)
   protected $path; // Gallery base path
   protected $prefix = array(); // Various prefixes for correct links construction
@@ -35,10 +40,42 @@ implements ArrayAccess, Countable, Iterator
   // Preview settings
   protected $pWidth;
   protected $pHeight;
+  protected $template;
 
   // X-SendFile settings
   protected $sfPrefix;
   protected $sfHeader = 'X-SendFile';
+
+  protected function fromFileList(array $list)
+  {
+    $prev = null;
+    foreach($list as $fname)
+    {
+      if(is_dir($fname))
+        continue;
+
+      $name = iconv($this->cs, 'UTF-8', basename($fname));
+      $this->isSaneName($name);
+
+      $meta = getimagesize($fname);
+      if($meta === false || $meta[0] === 0 || $meta[1] === 0)
+        continue;
+
+      $this->params[$name]['desc'] = $name;
+      $this->params[$name]['path'] = "{$this->path}/{$name}";
+      $this->params[$name]['width'] = $meta[0];
+      $this->params[$name]['height'] = $meta[1];
+      $this->params[$name]['mime'] = $meta['mime'];
+      if(isset($prev))
+      {
+        $this->params[$name]['prev'] = $prev;
+        $this->params[$prev]['next'] = $name;
+      }
+      $prev = $name;
+    }
+
+    return $this;
+  }
 
   public static function fromListfile(SplFileInfo $target, $charset = 'CP866', $fsEncoding = null)
   {
@@ -54,15 +91,23 @@ implements ArrayAccess, Countable, Iterator
 
     $f = iconv($charset, 'UTF-8', file_get_contents($path));
 
-    if(preg_match_all('/^(\"?)(?P<name>[^\"]+?)\1\s+(?P<desc>.*?)\s*$/m', $f, $ta, PREG_SET_ORDER))
+    if(preg_match_all('/^(\"?)(?P<name>[^\"]+?)\1\s+(?P<desc>.*?)\s*$/um', $f, $ta, PREG_SET_ORDER))
     {
       $prev = null;
       foreach($ta as $a)
       {
         $name = basename(trim($a['name']));
         $self->isSaneName($name);
+
+        $meta = getimagesize(iconv('UTF-8', $self->cs, "{$self->path}/$name"));
+        if($meta === false || $meta[0] === 0 || $meta[1] === 0)
+          continue;
+
         $self->params[$name]['desc'] = $a['desc'];
         $self->params[$name]['path'] = "{$self->path}/{$name}";
+        $self->params[$name]['width'] = $meta[0];
+        $self->params[$name]['height'] = $meta[1];
+        $self->params[$name]['mime'] = $meta['mime'];
         if(isset($prev))
         {
           $self->params[$name]['prev'] = $prev;
@@ -75,7 +120,19 @@ implements ArrayAccess, Countable, Iterator
     return $self;
   }
 
-  public static function fromDirectory(SplFileInfo $target, $extensions = null, $fsEncoding = null)
+  public static function fromDirectory(SplFileInfo $target, array $extensions = null, $fsEncoding = null)
+  {
+    if(empty($extensions))
+    {
+      $extensions = explode('|', static::defaultTypes);
+    }
+
+    $mask = "*.{" . implode(',', $extensions) . "}";
+
+    return static::fromCustomMask($target, $mask, $fsEncoding);
+  }
+
+  public static function fromCustomMask(SplFileInfo $target, $mask, $fsEncoding = null)
   {
     $path = $target->getRealPath();
 
@@ -85,39 +142,18 @@ implements ArrayAccess, Countable, Iterator
     if(!is_dir($path))
       throw new Exception('Target is not a directory', 500);
 
-    if(!is_array($extensions))
-      $extensions = null;
+    $self = new static($target, null, $fsEncoding);
 
-    $self = new static($target, $extensions, $fsEncoding);
-
-    $mask = iconv('UTF-8', $self->cs, "*.{" . implode(',', $self->extensions) . "}");
-
-    $prev = null;
-    foreach(glob("{$path}/{$mask}", GLOB_BRACE | GLOB_MARK) as $fname)
-    {
-      if(is_dir($fname))
-        continue;
-
-      $name = iconv($self->cs, 'UTF-8', basename($fname));
-      $self->isSaneName($name);
-      $self->params[$name]['desc'] = $name;
-      $self->params[$name]['path'] = "{$self->path}/{$name}";
-      if(isset($prev))
-      {
-        $self->params[$name]['prev'] = $prev;
-        $self->params[$prev]['next'] = $name;
-      }
-      $prev = $name;
-    }
-
-    return $self;
+    return $self->fromFileList(glob("{$path}/" . iconv('UTF-8', $self->cs, $mask), GLOB_BRACE | GLOB_MARK));
   }
-
+  /**
+  * $template($show, $preview, $description)
+  */
   public function showIndex($template = null)
   {
     if(empty($template))
     {
-      $template = '<div><a href="%1$s" target="_blank"><img src="%2$s" alt="%3$s"/></a><p><a href="%1$s" target="_blank">%3$s</a></p></div>';
+      $template = $this->template;
     }
 
     $gp = '';
@@ -138,7 +174,7 @@ implements ArrayAccess, Countable, Iterator
     return $this;
   }
 
-  public function allowSendFile($prefix, $header = null)
+  public function allowSendFile($prefix = null, $header = null)
   {
     $this->sfPrefix = $prefix;
     $this->sfHeader = trim($header)?: 'X-SendFile';
@@ -146,7 +182,7 @@ implements ArrayAccess, Countable, Iterator
 
   public function sendFile($path)
   {
-    if(empty($this->sfPrefix))
+    if(!isset($this->sfPrefix))
       return false;
 
     header_register_callback(function(){
@@ -162,7 +198,7 @@ implements ArrayAccess, Countable, Iterator
       header_remove('Content-Type');
     });
 
-    header("{$this->sfHeader}: {$this->sfPrefix}$path");
+    header("{$this->sfHeader}: {$this->sfPrefix}" . urlencode("$path"));
 
     return true;
   }
@@ -170,6 +206,15 @@ implements ArrayAccess, Countable, Iterator
   public function imageFileSize($name, $divisor = 1)
   {
     return $this->nf->format(ceil(filesize(iconv('UTF-8', $this->cs, "{$this->path}/$name")) / $divisor));
+  }
+
+  public function imagePreviewExists($name)
+  {
+    if(isset($this->params[$name]['preview']))
+      return !empty($this->params[$name]['preview']);
+
+    $fname = iconv('UTF-8', $this->cs, "{$this->path}/.preview/$name");
+    return $this->params[$name]['preview'] = file_exists($fname);
   }
 
   public function setPreviewSize($width = null, $height = null)
@@ -193,14 +238,32 @@ implements ArrayAccess, Countable, Iterator
     return $this;
   }
 
+  public function setTemplate($template = null)
+  {
+    $this->template = empty($template)
+      ? static::previewTemplate
+      : $template;
+  }
+
   public function getPrefix($name)
   {
     return $this->prefix[$name];
   }
 
-  public function getPath()
+  public function getPath($name = null, $local = null)
   {
-    return $this->path;
+    $path = $this->path;
+    if(isset($name))
+    {
+      $path .= $name;
+    }
+
+    if($local)
+    {
+      $path = iconv('UTF-8', $this->cs, $path);
+    }
+
+    return $path;
   }
 
   public function thumbnailImage($name)
@@ -211,14 +274,16 @@ implements ArrayAccess, Countable, Iterator
 
     try
     {
-      $img = new Imagick(iconv('UTF-8', $this->cs, "{$this->path}/$name"));
+      //$img = new Imagick(iconv('UTF-8', $this->cs, "{$this->path}/$name"));
+      $img = new Imagick("{$this->path}/$name");
       $img->thumbnailImage($this->pWidth, $this->pHeight, true);
-      $img->writeImage($path);
+      $img->writeImage("{$this->path}/.preview/$name");
     }
     catch(Exception $e)
     {
       if(!is_dir(dirname($path)))
         mkdir(dirname($path));
+
       return false;
     }
 
@@ -230,34 +295,44 @@ implements ArrayAccess, Countable, Iterator
   {
     $name = basename($fname);
     if(preg_match('/[^!#$%&\'()+,\-.;=@\[\]^_`{}~\p{L}\d\s]/uiS', $name))
-      throw new Exception('Invalid character in name \'' . $name . "'.", 403);
+      throw new Exception("Invalid character in name '$name'.", 400);
 
-    if(!preg_match('{.+\.(' . implode('|', array_map('preg_quote', $this->extensions)) . ')$}u', $name))
-      throw new Exception('Invalid filename extension.', 403);
+    if(!preg_match('{.+\.(' . implode('|', array_map('preg_quote', $this->extensions)) . ')$}ui', $name))
+      throw new Exception('Invalid filename extension.', 400);
 
     return true;
   }
 
 // Magic!
 
-  protected function __construct(SplFileInfo $path, $extensions = null, $fsEncoding = null)
+  protected function __construct(SplFileInfo $path, array $extensions = null, $fsEncoding = null)
   {
-    $this->cs = trim($fsEncoding) ?: 'UTF-8';
-    $this->path = iconv($this->cs, 'UTF-8', $path->getRealPath());
+    if(version_compare(PHP_VERSION, '7.1', '<'))
+    {
+      $this->cs = trim($fsEncoding) ?: 'UTF-8';
+    }
+    else
+    {
+      ini_set('internal_encoding', 'UTF-8');
+      $this->cs = 'UTF-8';
+    }
+
+    $this->path = iconv($this->cs, 'UTF-8', realpath($path->getRealPath()));
 
     // $path is not necessarily equals $path->getRealPath()
     // Work off original $path
-    $this->prefix['index'] = iconv($this->cs, 'UTF-8', substr($path, strlen($_SERVER['DOCUMENT_ROOT'])));
+    $this->prefix['index'] = iconv($this->cs, 'UTF-8', substr(realpath(realpath($path)), strlen(realpath(realpath($_SERVER['DOCUMENT_ROOT'])))));
     $this->prefix['view'] = $this->prefix['index'] . '/?show=';
     $this->prefix['thumbnail'] = $this->prefix['index'] . '/?preview=';
     $this->prefix['image'] = $this->prefix['index'] . '/?view=';
 
     $this->setNumberFormatter();
     $this->setPreviewSize();
+    $this->setTemplate();
 
-    if(!is_array($extensions))
+    if(empty($extensions))
     {
-      $this->extensions = array('gif', 'jpg', 'png');
+      $this->extensions = explode('|', static::defaultTypes);
     }
     else
     {
