@@ -106,10 +106,10 @@ switch(true)
 <head>
 <title><?=htmlspecialchars($gallery[$name]['desc'])?> - My Little Gallery</title>
 <?php if(isset($gallery[$name]['prev'])):?>
-<link rel="PREVIOUS" href="<?=htmlspecialchars($gallery->getPrefix('view') . rawurlencode($gallery[$name]['prev']))?>"/>
+<link rel="PREVIOUS" href="<?=htmlspecialchars($gallery->getUrl('view', $gallery[$name]['prev']))?>"/>
 <?php endif;
 if(isset($gallery[$name]['next'])):?>
-<link rel="NEXT" href="<?=htmlspecialchars($gallery->getPrefix('view') . rawurlencode($gallery[$name]['next']))?>"/>
+<link rel="NEXT" href="<?=htmlspecialchars($gallery->getUrl('view', $gallery[$name]['next']))?>"/>
 <?php endif; ?>
 <style type="text/css"><!--
 h1, p {
@@ -139,23 +139,23 @@ div.next {
 </head>
 <body>
 <h1><?=htmlspecialchars($gallery[$name]['desc'])?></h1>
-<p><img src="<?=htmlspecialchars($gallery->getPrefix('image') . rawurlencode($name))?>
+<p><img src="<?=htmlspecialchars($gallery->getUrl('image', $name))?>
 " alt="<?=htmlspecialchars($gallery[$name]['desc'] . ' (' . $gallery->imageFileSize($name, 1024) . "\xC2\xA0kB)")?>
 " title="" onclick="window.close();"/></p>
 <?php if(isset($gallery[$name]['prev'])):?>
-<div class="navFloater prev"><a href="<?=htmlspecialchars($gallery->getPrefix('view') . rawurlencode($gallery[$name]['prev']))?>
+<div class="navFloater prev"><a href="<?=htmlspecialchars($gallery->getUrl('view', $gallery[$name]['prev']))?>
 " title="<?=htmlspecialchars($gallery[$gallery[$name]['prev']]['desc'])?>
 "><?=htmlspecialchars("<< {$gallery[$gallery[$name]['prev']]['desc']}")?></a></div>
 <?php endif;
 if(isset($gallery[$name]['next'])):?>
-<div class="navFloater next"><a href="<?=htmlspecialchars($gallery->getPrefix('view') . rawurlencode($gallery[$name]['next']))?>
+<div class="navFloater next"><a href="<?=htmlspecialchars($gallery->getUrl('view', $gallery[$name]['next']))?>
 " title="<?=htmlspecialchars($gallery[$gallery[$name]['next']]['desc'])?>
 "><?=htmlspecialchars("{$gallery[$gallery[$name]['next']]['desc']} >>")?></a></div>
 <?php endif; ?>
 <!-- Forum embed code
-[url=<?="{$_SERVER['REQUEST_SCHEME']}://{$_SERVER['SERVER_NAME']}" . htmlspecialchars($gallery->getPrefix('view') . rawurlencode($name)) ?>
-][img]<?="{$_SERVER['REQUEST_SCHEME']}://{$_SERVER['SERVER_NAME']}" . htmlspecialchars($gallery->getPrefix('thumbnail') . rawurlencode($name)) ?>[/img][/url]
-[url=<?="{$_SERVER['REQUEST_SCHEME']}://{$_SERVER['SERVER_NAME']}" . htmlspecialchars($gallery->getPrefix('view') . rawurlencode($name)) ?>
+[url=<?="{$_SERVER['REQUEST_SCHEME']}://{$_SERVER['SERVER_NAME']}" . htmlspecialchars($gallery->getUrl('view', $name))?>
+][img]<?="{$_SERVER['REQUEST_SCHEME']}://{$_SERVER['SERVER_NAME']}" . htmlspecialchars($gallery->getUrl('thumbnail', $name))?>[/img][/url]
+[url=<?="{$_SERVER['REQUEST_SCHEME']}://{$_SERVER['SERVER_NAME']}" . htmlspecialchars($gallery->getUrl('view', $name))?>
 ]<?=htmlspecialchars($gallery[$name]['desc'] . ' (' . $gallery->imageFileSize($name, 1024) . "\xC2\xA0kB)")?>[/url]
 -->
 </body>
@@ -192,7 +192,7 @@ div.MyLittleGallery img {
 //--></style>
 </head>
 <body><p><a href="./..">Go up</a></p>
-<div class="MyLittleGallery"><?=$gallery->showIndex();?></div>
+<div class="MyLittleGallery"><?=$gallery->showIndex()?></div>
 <!-- pre style="text-align: left;"><?php//=print_r($gallery, true)?></pre -->
 </body></html>
 <?php
