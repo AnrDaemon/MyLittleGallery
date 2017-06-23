@@ -3,7 +3,7 @@
 *
 * A simple drop-in file-based HTML gallery.
 *
-* $Id: Gallery.php 669 2017-06-22 15:52:05Z anrdaemon $
+* $Id: Gallery.php 671 2017-06-23 19:49:17Z anrdaemon $
 */
 
 namespace AnrDaemon\MyLittleGallery;
@@ -12,6 +12,7 @@ use
   ArrayAccess,
   Countable,
   Exception,
+  ErrorException,
   Imagick,
   Iterator,
   NumberFormatter,
@@ -23,7 +24,7 @@ implements ArrayAccess, Countable, Iterator
   const previewTemplate =
     '<div><a href="%1$s" target="_blank"><img src="%2$s" alt="%3$s"/></a><p><a href="%1$s" target="_blank">%3$s</a></p></div>';
 
-  const defaultTypes = 'gif|jpeg|jpg|png|tif|tiff|wbmp|webp';
+  const defaultTypes = 'gif|jpeg|jpg|png|wbmp|webp';
 
   // All paths are UTF-8! (Except those from SplFileInfo)
   protected $path; // Gallery base path
@@ -273,23 +274,71 @@ implements ArrayAccess, Countable, Iterator
 
   public function thumbnailImage($name)
   {
-    $path = iconv('UTF-8', $this->cs, "{$this->path}/.preview/$name");
+    static $gdSave = array(
+      'image/gif' => 'imagegif',
+      'image/jpeg' => 'imagejpeg',
+      'image/png' => 'imagepng',
+      'image/vnd.wap.wbmp' => 'imagewbmp',
+      'image/webp' => 'imagewebp',
+    );
+
+    if(!isset($this->params[$name]))
+      throw new Exception("Image '$name' is not registered in the gallery.", 404);
+
+    $path = $this->getPath("/.preview/$name", true);
     if(is_file($path))
       return true;
 
     try
     {
-      //$img = new Imagick(iconv('UTF-8', $this->cs, "{$this->path}/$name"));
-      $img = new Imagick("{$this->path}/$name");
-      $img->thumbnailImage($this->pWidth, $this->pHeight, true);
-      $img->writeImage("{$this->path}/.preview/$name");
+      set_error_handler(function($s, $m, $f, $l, $c = null) { throw new ErrorException($m, 0, $s, $f, $l); });
+
+      if(class_exists('Imagick'))
+      {
+        $img = new Imagick("{$this->path}/$name");
+        $img->thumbnailImage($this->pWidth, $this->pHeight, true);
+        $img->writeImage("{$this->path}/.preview/$name");
+      }
+      elseif(function_exists('imagecreatefromstring'))
+      {
+        $src = imagecreatefromstring(file_get_contents($this->getPath("/$name", true)));
+        if($src === false)
+          throw new Exception("The file '$name' can't be interpreted as image.", 500);
+
+        $oFactor = $this->params[$name]['width'] / $this->params[$name]['height'];
+        $tFactor = $this->pWidth / $this->pHeight;
+        if($oFactor >= $tFactor)
+        {
+          $w = $this->pWidth;
+          $h = min($this->pHeight, ceil($this->pWidth / $oFactor));
+        }
+        else
+        {
+          $w = min($this->pWidth, ceil($this->pHeight * $oFactor));
+          $h = $this->pHeight;
+        }
+
+        $img = imagecreatetruecolor($w, $h);
+        if(!imagecopyresampled($img, $src, 0, 0, 0, 0, $w, $h, $this->params[$name]['width'], $this->params[$name]['height']))
+          throw new Exception("Unable to create thumbnail for '$name'.", 500);
+
+        $gdSave[$this->params[$name]['mime']]($img, $path);
+      }
+      else
+        throw new ErrorException('Imagick or gd2 extension is required to create thumbnails at runtime.', 501);
+
+      restore_error_handler();
     }
     catch(Exception $e)
     {
+      restore_error_handler();
       if(!is_dir(dirname($path)))
+      {
         mkdir(dirname($path));
+        return false;
+      }
 
-      return false;
+      throw $e;
     }
 
     return true;
