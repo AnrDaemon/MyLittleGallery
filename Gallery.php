@@ -3,7 +3,7 @@
 *
 * A simple drop-in file-based HTML gallery.
 *
-* $Id: Gallery.php 671 2017-06-23 19:49:17Z anrdaemon $
+* $Id: Gallery.php 674 2017-06-24 23:01:04Z anrdaemon $
 */
 
 namespace AnrDaemon\MyLittleGallery;
@@ -62,11 +62,13 @@ implements ArrayAccess, Countable, Iterator
       if($meta === false || $meta[0] === 0 || $meta[1] === 0)
         continue;
 
-      $this->params[$name]['desc'] = $name;
-      $this->params[$name]['path'] = "{$this->path}/{$name}";
-      $this->params[$name]['width'] = $meta[0];
-      $this->params[$name]['height'] = $meta[1];
-      $this->params[$name]['mime'] = $meta['mime'];
+      $this->params[$name] = new ArrayIterator([
+        'desc' => $name,
+        'path' => "{$this->path}/{$name}",
+        'width' => $meta[0],
+        'height' => $meta[1],
+        'mime' => $meta['mime'],
+      ]);
       if(isset($prev))
       {
         $this->params[$name]['prev'] = $prev;
@@ -104,11 +106,13 @@ implements ArrayAccess, Countable, Iterator
         if($meta === false || $meta[0] === 0 || $meta[1] === 0)
           continue;
 
-        $self->params[$name]['desc'] = $a['desc'];
-        $self->params[$name]['path'] = "{$self->path}/{$name}";
-        $self->params[$name]['width'] = $meta[0];
-        $self->params[$name]['height'] = $meta[1];
-        $self->params[$name]['mime'] = $meta['mime'];
+        $this->params[$name] = new ArrayIterator([
+          'desc' => $a['desc'],
+          'path' => "{$self->path}/{$name}",
+          'width' => $meta[0],
+          'height' => $meta[1],
+          'mime' => $meta['mime'],
+        ]);
         if(isset($prev))
         {
           $self->params[$name]['prev'] = $prev;
@@ -179,6 +183,8 @@ implements ArrayAccess, Countable, Iterator
   {
     $this->sfPrefix = $prefix;
     $this->sfHeader = trim($header)?: 'X-SendFile';
+
+    return $this;
   }
 
   public function sendFile($path)
@@ -244,6 +250,8 @@ implements ArrayAccess, Countable, Iterator
     $this->template = empty($template)
       ? static::previewTemplate
       : $template;
+
+    return $this;
   }
 
   public function getPrefix($name)
