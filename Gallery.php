@@ -3,13 +3,14 @@
 *
 * A simple drop-in file-based HTML gallery.
 *
-* $Id: Gallery.php 674 2017-06-24 23:01:04Z anrdaemon $
+* $Id: Gallery.php 675 2017-06-24 23:18:10Z anrdaemon $
 */
 
 namespace AnrDaemon\MyLittleGallery;
 
 use
   ArrayAccess,
+  ArrayIterator,
   Countable,
   Exception,
   ErrorException,
