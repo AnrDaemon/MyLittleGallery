@@ -3,31 +3,20 @@
 *
 * A simple drop-in file-based HTML gallery.
 *
-* $Id: Gallery.php 675 2017-06-24 23:18:10Z anrdaemon $
+* $Id: Gallery.php 684 2017-10-10 04:41:44Z anrdaemon $
 */
 
 namespace AnrDaemon\MyLittleGallery;
 
-use
-  ArrayAccess,
-  ArrayIterator,
-  Countable,
-  Exception,
-  ErrorException,
-  Imagick,
-  Iterator,
-  NumberFormatter,
-  SplFileInfo;
-
 class Gallery
-implements ArrayAccess, Countable, Iterator
+implements \ArrayAccess, \Countable, \Iterator
 {
   const previewTemplate =
     '<div><a href="%1$s" target="_blank"><img src="%2$s" alt="%3$s"/></a><p><a href="%1$s" target="_blank">%3$s</a></p></div>';
 
   const defaultTypes = 'gif|jpeg|jpg|png|wbmp|webp';
 
-  // All paths are UTF-8! (Except those from SplFileInfo)
+  // All paths are UTF-8! (Except those from \SplFileInfo)
   protected $path; // Gallery base path
   protected $prefix = array(); // Various prefixes for correct links construction
   protected $params = array(); // Files list
@@ -63,7 +52,7 @@ implements ArrayAccess, Countable, Iterator
       if($meta === false || $meta[0] === 0 || $meta[1] === 0)
         continue;
 
-      $this->params[$name] = new ArrayIterator([
+      $this->params[$name] = new \ArrayIterator([
         'desc' => $name,
         'path' => "{$this->path}/{$name}",
         'width' => $meta[0],
@@ -81,15 +70,15 @@ implements ArrayAccess, Countable, Iterator
     return $this;
   }
 
-  public static function fromListfile(SplFileInfo $target, $charset = 'CP866', $fsEncoding = null)
+  public static function fromListfile(\SplFileInfo $target, $charset = 'CP866', $fsEncoding = null)
   {
     $path = $target->getRealPath();
 
     if(empty($path))
-      throw new Exception('Can\'t use empty path.', 500);
+      throw new \Exception('Can\'t use empty path.', 500);
 
     if(is_dir($path))
-      throw new Exception('Target is a directory', 500);
+      throw new \Exception('Target is a directory', 500);
 
     $self = new static($target->getPathInfo(), null, $fsEncoding);
 
@@ -107,7 +96,7 @@ implements ArrayAccess, Countable, Iterator
         if($meta === false || $meta[0] === 0 || $meta[1] === 0)
           continue;
 
-        $this->params[$name] = new ArrayIterator([
+        $self->params[$name] = new \ArrayIterator([
           'desc' => $a['desc'],
           'path' => "{$self->path}/{$name}",
           'width' => $meta[0],
@@ -126,7 +115,7 @@ implements ArrayAccess, Countable, Iterator
     return $self;
   }
 
-  public static function fromDirectory(SplFileInfo $target, array $extensions = null, $fsEncoding = null)
+  public static function fromDirectory(\SplFileInfo $target, array $extensions = null, $fsEncoding = null)
   {
     if(empty($extensions))
     {
@@ -138,15 +127,15 @@ implements ArrayAccess, Countable, Iterator
     return static::fromCustomMask($target, $mask, $fsEncoding);
   }
 
-  public static function fromCustomMask(SplFileInfo $target, $mask, $fsEncoding = null)
+  public static function fromCustomMask(\SplFileInfo $target, $mask, $fsEncoding = null)
   {
     $path = $target->getRealPath();
 
     if(empty($path))
-      throw new Exception('Can\'t use empty path.', 500);
+      throw new \Exception('Can\'t use empty path.', 500);
 
     if(!is_dir($path))
-      throw new Exception('Target is not a directory', 500);
+      throw new \Exception('Target is not a directory', 500);
 
     $self = new static($target, null, $fsEncoding);
 
@@ -173,9 +162,9 @@ implements ArrayAccess, Countable, Iterator
     return $gp;
   }
 
-  public function setNumberFormatter($locale = 'en_US.UTF-8', $style = NumberFormatter::DECIMAL, $pattern = '')
+  public function setNumberFormatter($locale = 'en_US.UTF-8', $style = \NumberFormatter::DECIMAL, $pattern = '')
   {
-    $this->nf = new NumberFormatter($locale, $style, $pattern);
+    $this->nf = new \NumberFormatter($locale, $style, $pattern);
 
     return $this;
   }
@@ -228,7 +217,7 @@ implements ArrayAccess, Countable, Iterator
   public function setPreviewSize($width = null, $height = null)
   {
     if((int)$width < 0 || (int)$height < 0)
-      throw new Exception('Thumbnail dimensions can\'t be negative.', 500);
+      throw new \Exception('Thumbnail dimensions can\'t be negative.', 500);
 
     $this->pWidth = (int)$width ?: 160;
     $this->pHeight = (int)$height ?: 120;
@@ -239,7 +228,7 @@ implements ArrayAccess, Countable, Iterator
   public function setPrefix($name, $prefix)
   {
     if(!isset($this->prefix[$name]))
-      throw new Exception("Unknown prefix '$name'.", 500);
+      throw new \Exception("Unknown prefix '$name'.", 500);
 
     $this->prefix[$name] = $prefix;
 
@@ -292,7 +281,7 @@ implements ArrayAccess, Countable, Iterator
     );
 
     if(!isset($this->params[$name]))
-      throw new Exception("Image '$name' is not registered in the gallery.", 404);
+      throw new \Exception("Image '$name' is not registered in the gallery.", 404);
 
     $path = $this->getPath("/.preview/$name", true);
     if(is_file($path))
@@ -300,11 +289,11 @@ implements ArrayAccess, Countable, Iterator
 
     try
     {
-      set_error_handler(function($s, $m, $f, $l, $c = null) { throw new ErrorException($m, 0, $s, $f, $l); });
+      set_error_handler(function($s, $m, $f, $l, $c = null) { throw new \ErrorException($m, 0, $s, $f, $l); });
 
       if(class_exists('Imagick'))
       {
-        $img = new Imagick("{$this->path}/$name");
+        $img = new \Imagick("{$this->path}/$name");
         $img->thumbnailImage($this->pWidth, $this->pHeight, true);
         $img->writeImage("{$this->path}/.preview/$name");
       }
@@ -312,7 +301,7 @@ implements ArrayAccess, Countable, Iterator
       {
         $src = imagecreatefromstring(file_get_contents($this->getPath("/$name", true)));
         if($src === false)
-          throw new Exception("The file '$name' can't be interpreted as image.", 500);
+          throw new \Exception("The file '$name' can't be interpreted as image.", 500);
 
         $oFactor = $this->params[$name]['width'] / $this->params[$name]['height'];
         $tFactor = $this->pWidth / $this->pHeight;
@@ -329,16 +318,16 @@ implements ArrayAccess, Countable, Iterator
 
         $img = imagecreatetruecolor($w, $h);
         if(!imagecopyresampled($img, $src, 0, 0, 0, 0, $w, $h, $this->params[$name]['width'], $this->params[$name]['height']))
-          throw new Exception("Unable to create thumbnail for '$name'.", 500);
+          throw new \Exception("Unable to create thumbnail for '$name'.", 500);
 
         $gdSave[$this->params[$name]['mime']]($img, $path);
       }
       else
-        throw new ErrorException('Imagick or gd2 extension is required to create thumbnails at runtime.', 501);
+        throw new \ErrorException('Imagick or gd2 extension is required to create thumbnails at runtime.', 501);
 
       restore_error_handler();
     }
-    catch(Exception $e)
+    catch(\Exception $e)
     {
       restore_error_handler();
       if(!is_dir(dirname($path)))
@@ -358,17 +347,17 @@ implements ArrayAccess, Countable, Iterator
   {
     $name = basename($fname);
     if(preg_match('/[^!#$%&\'()+,\-.;=@\[\]^_`{}~\p{L}\d\s]/uiS', $name))
-      throw new Exception("Invalid character in name '$name'.", 400);
+      throw new \Exception("Invalid character in name '$name'.", 400);
 
     if(!preg_match('{.+\.(' . implode('|', array_map('preg_quote', $this->extensions)) . ')$}ui', $name))
-      throw new Exception('Invalid filename extension.', 400);
+      throw new \Exception('Invalid filename extension.', 400);
 
     return true;
   }
 
 // Magic!
 
-  protected function __construct(SplFileInfo $path, array $extensions = null, $fsEncoding = null)
+  protected function __construct(\SplFileInfo $path, array $extensions = null, $fsEncoding = null)
   {
     if(version_compare(PHP_VERSION, '7.1', '<'))
     {
@@ -409,7 +398,7 @@ implements ArrayAccess, Countable, Iterator
       }
 
       if(empty($masks))
-        throw new Exception('File extensions can\'t be empty strings.', 500);
+        throw new \Exception('File extensions can\'t be empty strings.', 500);
 
       $this->extensions = $masks;
     }
