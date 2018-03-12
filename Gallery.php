@@ -3,7 +3,7 @@
 *
 * A simple drop-in file-based HTML gallery.
 *
-* $Id: Gallery.php 684 2017-10-10 04:41:44Z anrdaemon $
+* $Id: Gallery.php 761 2018-03-12 15:31:02Z anrdaemon $
 */
 
 namespace AnrDaemon\MyLittleGallery;
@@ -265,7 +265,7 @@ implements \ArrayAccess, \Countable, \Iterator
     return $path;
   }
 
-  public function getUrl($prefix, $name)
+  public function getUrl($prefix, $name = '')
   {
     return $this->prefix[$prefix] . ($prefix === 'index' ? '/' : rawurlencode($name));
   }

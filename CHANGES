@@ -1,22 +1,42 @@
 ------------------------------------------------------------------------
-r684 | anrdaemon | 2017-10-10 07:41:44 +0300 (Вт, 10 окт 2017) | 3 lines
+r761 | anrdaemon | 2018-03-12 18:31:02 +0300 (Mon, 12 Mar 2018) | 2 lines
 
-- Fix using $this outside object context.
-* Change base classes' resolution.
-
-------------------------------------------------------------------------
-r674 | anrdaemon | 2017-06-25 02:01:04 +0300 (Вс, 25 июн 2017) | 2 lines
-
-* ArrayIterator to store entries.
+* Fix default parameters for Gallery::getUrl().
 
 ------------------------------------------------------------------------
-r673 | anrdaemon | 2017-06-25 01:57:12 +0300 (Вс, 25 июн 2017) | 2 lines
+r760 | anrdaemon | 2018-03-12 09:01:38 +0300 (Mon, 12 Mar 2018) | 2 lines
 
-* Reformat initial assignment.
+* Correctly set HTTP response code.
 
 ------------------------------------------------------------------------
-r672 | anrdaemon | 2017-06-24 00:56:23 +0300 (Сб, 24 июн 2017) | 2 lines
+r759 | anrdaemon | 2018-03-12 08:34:55 +0300 (Mon, 12 Mar 2018) | 2 lines
 
-* Fix setters chaining.
++ index.sample: Added index link to show image pages.
+
+------------------------------------------------------------------------
+r758 | anrdaemon | 2018-03-12 08:01:19 +0300 (Mon, 12 Mar 2018) | 2 lines
+
++ Added example PHAR stub and compilation instructions.
+
+------------------------------------------------------------------------
+r757 | anrdaemon | 2018-03-12 07:55:31 +0300 (Mon, 12 Mar 2018) | 2 lines
+
+* index.sample: Tweak built-in config activation case.
+
+------------------------------------------------------------------------
+r756 | anrdaemon | 2018-03-12 07:46:20 +0300 (Mon, 12 Mar 2018) | 2 lines
+
+* config.sample: More comments and better defaults.
+
+------------------------------------------------------------------------
+r755 | anrdaemon | 2018-03-12 06:51:49 +0300 (Mon, 12 Mar 2018) | 4 lines
+
+* index.sample: Make index appropriate for use in PHAr as is.
+* index.sample: Tweak show image page CSS to combat text overlap.
+
+------------------------------------------------------------------------
+r692 | anrdaemon | 2017-10-27 20:48:50 +0300 (Fri, 27 Oct 2017) | 2 lines
+
+* Update dev-master alias.
 
 ------------------------------------------------------------------------

@@ -5,7 +5,10 @@ if(is_file(__DIR__ . '/Gallery.php'))
   require_once __DIR__ . '/Gallery.php';
 }
 
-require_once __DIR__ . '/config.php';
+if(!defined('GALLERY_BASE_DIR'))
+{
+  require_once __DIR__ . '/config.php';
+}
 
 ini_set('default_charset', 'UTF-8');
 setlocale(LC_ALL, 'C.' . GALLERY_FS_ENCODING);
@@ -36,8 +39,8 @@ set_exception_handler(function($e)
     501 => 'Not implemented',
   );
   $code = isset($map[$e->getCode()]) ? $e->getCode() : 500;
-  header("Status: $code", true, $code);
-  die("<!DOCTYPE html>
+  http_response_code($code);
+  exit("<!DOCTYPE html>
 <html><head>
 <title>{$code} {$map[$code]}</title>
 </head><body><h1>{$map[$code]}</h1>
@@ -105,6 +108,7 @@ switch(true)
 <html>
 <head>
 <title><?=htmlspecialchars($gallery[$name]['desc'])?> - My Little Gallery</title>
+<link rel="INDEX UP" href="<?=htmlspecialchars($gallery->getUrl('index'))?>"/>
 <?php if(isset($gallery[$name]['prev'])):?>
 <link rel="PREVIOUS" href="<?=htmlspecialchars($gallery->getUrl('view', $gallery[$name]['prev']))?>"/>
 <?php endif;
@@ -112,6 +116,10 @@ if(isset($gallery[$name]['next'])):?>
 <link rel="NEXT" href="<?=htmlspecialchars($gallery->getUrl('view', $gallery[$name]['next']))?>"/>
 <?php endif; ?>
 <style type="text/css"><!--
+h1 {
+  padding-top: 1ex;
+}
+
 h1, p {
   text-align: center;
 }
