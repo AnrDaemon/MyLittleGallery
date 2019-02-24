@@ -7,7 +7,9 @@ if(is_file(__DIR__ . '/Gallery.php'))
 
 if(!defined('GALLERY_BASE_DIR'))
 {
-  require_once __DIR__ . '/config.php';
+  $confFile = dirname(\Phar::running(false) ?: __FILE__) . '/config.php';
+  if(file_exists($confFile))
+    require_once $confFile;
 }
 
 ini_set('default_charset', 'UTF-8');

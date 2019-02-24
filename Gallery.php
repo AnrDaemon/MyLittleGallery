@@ -3,13 +3,13 @@
 *
 * A simple drop-in file-based HTML gallery.
 *
-* $Id: Gallery.php 761 2018-03-12 15:31:02Z anrdaemon $
+* $Id: Gallery.php 987 2019-02-24 19:38:16Z anrdaemon $
 */
 
 namespace AnrDaemon\MyLittleGallery;
 
 class Gallery
-implements \ArrayAccess, \Countable, \Iterator
+implements \ArrayAccess, \Countable, \IteratorAggregate
 {
   const previewTemplate =
     '<div><a href="%1$s" target="_blank"><img src="%2$s" alt="%3$s"/></a><p><a href="%1$s" target="_blank">%3$s</a></p></div>';
@@ -52,7 +52,7 @@ implements \ArrayAccess, \Countable, \Iterator
       if($meta === false || $meta[0] === 0 || $meta[1] === 0)
         continue;
 
-      $this->params[$name] = new \ArrayIterator([
+      $this->params[$name] = new \ArrayObject([
         'desc' => $name,
         'path' => "{$this->path}/{$name}",
         'width' => $meta[0],
@@ -96,7 +96,7 @@ implements \ArrayAccess, \Countable, \Iterator
         if($meta === false || $meta[0] === 0 || $meta[1] === 0)
           continue;
 
-        $self->params[$name] = new \ArrayIterator([
+        $self->params[$name] = new \ArrayObject([
           'desc' => $a['desc'],
           'path' => "{$self->path}/{$name}",
           'width' => $meta[0],
@@ -172,7 +172,7 @@ implements \ArrayAccess, \Countable, \Iterator
   public function allowSendFile($prefix = null, $header = null)
   {
     $this->sfPrefix = $prefix;
-    $this->sfHeader = trim($header)?: 'X-SendFile';
+    $this->sfHeader = trim($header) ?: 'X-SendFile';
 
     return $this;
   }
@@ -182,18 +182,21 @@ implements \ArrayAccess, \Countable, \Iterator
     if(!isset($this->sfPrefix))
       return false;
 
-    header_register_callback(function(){
-      /*
-      Accept-Ranges
-      Cache-Control
-      Content-Disposition
-      Content-Type
-      Expires
-      Set-Cookie
-      */
-      header_remove('Accept-Ranges');
-      header_remove('Content-Type');
-    });
+    header_register_callback(
+      function()
+      {
+        /*
+        Accept-Ranges
+        Cache-Control
+        Content-Disposition
+        Content-Type
+        Expires
+        Set-Cookie
+        */
+        header_remove('Accept-Ranges');
+        header_remove('Content-Type');
+      }
+    );
 
     header("{$this->sfHeader}: {$this->sfPrefix}" . urlencode("$path"));
 
@@ -433,30 +436,10 @@ implements \ArrayAccess, \Countable, \Iterator
     return count($this->params);
   }
 
-// Iterator
+// IteratorAggregate
 
-  public function current()
+  public function getIterator()
   {
-    return current($this->params);
-  }
-
-  public function key()
-  {
-    return key($this->params);
-  }
-
-  public function next()
-  {
-    return next($this->params);
-  }
-
-  public function rewind()
-  {
-    return reset($this->params);
-  }
-
-  public function valid()
-  {
-    return key($this->params) !== null;
+    return new \ArrayIterator($this->params);
   }
 }

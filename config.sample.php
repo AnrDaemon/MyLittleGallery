@@ -20,11 +20,13 @@ define('GALLERY_FS_ENCODING', 'UTF-8');
 
 /** Specify gallery descriptions encoding.
 *
+* Only used with GALLERY_DESC_FILE
+*
 * CP866 for cyrillic descriptions is common.
-* UTF-8 is a sane default suitable for drop-in gallery. (It's not used anyway then.)
+* UTF-8 is a sane default suitable for drop-in gallery.
 */
 //define('GALLERY_DESC_ENCODING', 'CP866');
-define('GALLERY_DESC_ENCODING', 'UTF-8');
+//define('GALLERY_DESC_ENCODING', 'UTF-8');
 
 /** Define general gallery layout
 */

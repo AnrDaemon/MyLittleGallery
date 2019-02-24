@@ -9,7 +9,13 @@
         }
     ],
     "require": {
-        "php": "^5.3 || ^7.0"
+        "php": "^5.3 || ^7.0",
+        "ext-SPL": "*",
+        "ext-Phar": ">=2.0",
+        "ext-gd": "*"
+    },
+    "suggest": {
+        "ext-Imagick": "Better image handling."
     },
     "extra": {
         "branch-alias": {
